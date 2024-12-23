@@ -1,0 +1,93 @@
+local scriptName = "Kenzo Auto Bounty"
+local iconId = 71098523497950
+local messageKill = "Kenzo BloxFruit"
+local messageChangeServer = "Đổi server..."
+local autoFam = true
+local autoChangeServer = true
+local autoChat = true
+local autoSkill = true
+local team = "Hải Tặc" -- Chọn "Hải Tặc" hoặc "Hải Quân"
+local function main()
+    local args = {["icon"] = iconId}
+    game.ReplicatedStorage.SetIcon:InvokeServer(args)
+
+    while wait(1) do
+        if game.Players.LocalPlayer.PlayerGui.PvPWindow.Visible then
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer and player.Character then
+                    local bounty = player.PlayerGui.BountyGui.TextLabel.Text
+                    if bounty and tonumber(bounty:match("%d+")) > 0 then
+                        if autoFam then
+                            local args = {["player"] = player.Name}
+                            game.ReplicatedStorage.FamBounty:InvokeServer(args)
+                        end
+
+                        if autoSkill then
+                            local skill = getSkill()
+                            if skill then
+                                useSkill(skill, player)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        if autoChangeServer and not hasBountyPlayer() then
+            game.ReplicatedStorage.ChangeServer:InvokeServer()
+            print(messageChangeServer)
+        end
+    end
+end
+local function getSkill()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            local tool = humanoid:FindFirstChild("Tool")
+            if tool then
+                if tool.Name == "Võ" then
+                    return "Z" -- Skill Z
+                elseif tool.Name == "Kiếm" then
+                    return "X" -- Skill X
+                elseif tool.Name == "Súng" then
+                    return "Z" -- Skill Z
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function useSkill(skill, target)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:FireServer("Aim", target)
+            humanoid:FireServer("UseSkill", skill)
+            if autoChat then
+                game.ReplicatedStorage.DefaultChatService:SayMessage(messageKill, "All")
+            end
+        end
+    end
+end
+
+local function hasBountyPlayer()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            local bounty = player.PlayerGui.BountyGui.TextLabel.Text
+            if bounty and tonumber(bounty:match("%d+")) > 0 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function isPvPEnabled(player)
+    return player.PlayerGui.PvPWindow.Visible
+end
+main()
